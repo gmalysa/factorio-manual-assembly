@@ -16,13 +16,11 @@ local function track_controller(c, e)
 	global.assemblers[uid] = e
 end
 
-local function on_manual_assembler_built(event)
-	local e = event.created_entity or event.entity
+this.on_built_match = {
+	"manual-assembler"
+}
 
-	if not e.valid then
-		return
-	end
-
+function this.on_built(e)
 	-- create and attach controller
 	local c = e.surface.create_entity{
 		name = "assembler-controller",
@@ -32,18 +30,24 @@ local function on_manual_assembler_built(event)
 	}
 	c.operable = false
 
-	track_controller(c, e)
+	local uid = e.unit_number
+	global.assemblers[uid] = {
+		assembler = e,
+		controller = c,
+		signal = {
+			type = "virtual",
+			name = "signal-blue"
+		}
+	}
 
 	-- todo another output combinator that shows what this assembler needs to progress?
 end
 
-local function on_tick()
-	for k,c in pairs(global.controllers) do
-		local assembler = global.assemblers[c.unit_number]
-		local signal = c.get_merged_signal({
-			type = "virtual",
-			name = "signal-blue"
-		})
+function this.on_tick()
+	for uid,asm in pairs(global.assemblers) do
+		local controller = asm.controller
+		local assembler = asm.assembler
+		local signal = controller.get_merged_signal(asm.signal)
 
 		if signal == 1 then
 			assembler.active = true

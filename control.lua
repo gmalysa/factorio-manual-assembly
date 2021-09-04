@@ -2,19 +2,17 @@
 --
 
 -- @todo:
--- assembler stuff needs to be reintegrated and made to actually work
--- code formatting, comment blocks, etc
 -- need to handle: on_pre_player_mined_item, on_robot_pre_mined,
 --                 on_entity_died, script_raised_entity_destroy
 -- for performance at some point split things into active and inactive lists
 
 local glog = require("scripts.glog")
---local assemblers = require("scripts.assemblers")
+local assemblers = require("scripts.assemblers")
 local drills = require("scripts.drills")
 
 script.on_init(function()
 	glog.init()
---	assemblers.init()
+	assemblers.init()
 	drills.init()
 end)
 
@@ -51,6 +49,7 @@ end
 
 local all_filters = {}
 register_built_filters(all_filters, drills)
+register_built_filters(all_filters, assemblers)
 
 ---
  -- Event handler for the on built class of events, which forwards to the appropriate
@@ -98,6 +97,7 @@ end
  -- @return void
  --
 local function on_tick_handler(event)
+	assemblers.on_tick()
 	drills.on_tick()
 end
 
