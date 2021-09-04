@@ -1,50 +1,50 @@
 -- SPDX-License-Identifier: BSD-3-Clause
+--
+
+-- @todo
+-- general cleanup of this mess
+-- assembler sensor node? for reading current status that is not equal to desired
+
+local zerowire = {
+	shadow = {red = {0, 0}, green = {0, 0}},
+	wire = {red = {0, 0}, green = {0, 0}}
+}
+
 local controllerprop = table.deepcopy(data.raw['constant-combinator']['constant-combinator'])
 
 -- the connection points are purely visual, constant combinator doesn't have selectable bounding box
 -- for connections and doesn't use the i/o props
 
--- need to move the assembler selection box over slightly so that the combinator can be placed
--- next to it with a different selection box and that lets us access it
-
-controllerprop.type = "constant-combinator"
 controllerprop.name = "assembler-controller"
-controllerprop.order = "a-controller"
-controllerprop.icon = "__base__/graphics/icons/constant-combinator.png"
 controllerprop.flags = {"placeable-player", "player-creation", "placeable-off-grid", "not-deconstructable", "not-blueprintable"}
 controllerprop.minable = nil
 controllerprop.collision_mask = {}
-controllerprop.selection_box = {{0, -1.5}, {0.5, 1.5}}
+controllerprop.selection_box = {{0, -0.75}, {0.5, 0.75}}
 controllerprop.circuit_wire_connection_points = {
-	{
-		shadow = {red = {0, 0}, green = {0, 0}},
-		wire = {red = {0, 0}, green = {0, 0}}
-	},
-	{
-		shadow = {red = {0, 0}, green = {0, 0}},
-		wire = {red = {0, 0}, green = {0, 0}}
-	},
-	{
-		shadow = {red = {0, 0}, green = {0, 0}},
-		wire = {red = {0, 0}, green = {0, 0}}
-	},
-	{
-		shadow = {red = {0, 0}, green = {0, 0}},
-		wire = {red = {0, 0}, green = {0, 0}}
-	}
+	zerowire, zerowire, zerowire, zerowire
 }
 controllerprop.circuit_wire_max_distance = 9
+
+local desired = table.deepcopy(data.raw['constant-combinator']['constant-combinator'])
+
+desired.name = "assembler-needs"
+controllerprop.flags = {"placeable-player", "player-creation", "placeable-off-grid", "not-deconstructable", "not-blueprintable"}
+controllerprop.minable = nil
+controllerprop.collision_mask = {}
+controllerprop.selection_box = {{0, -0.75}, {0.5, 0.75}}
+controllerprop.circuit_wire_connection_points = {
+	zerowire, zerowire, zerowire, zerowire
+}
+desired.circuit_wire_max_distance = 0
 
 local assembler = table.deepcopy(data.raw['assembling-machine']['assembling-machine-1'])
 assembler.name = "manual-assembler"
 assembler.minable = {mining_time = 0.2, result = "manual-assembler"}
-assembler.energy_usage = "1kW"
-assembler.circuit_wire_max_distance = 1
-assembler.order = "z-manual-assembler-1"
 assembler.selection_box = {{-1.5, -1.5}, {1, 1.5}}
 
 data:extend({
 	controllerprop,
+	desired,
 	assembler,
 
 	{
@@ -53,7 +53,7 @@ data:extend({
 		icon = "__base__/graphics/icons/assembling-machine-1.png",
 		icon_size = 64, icon_mipmaps = 4,
 		subgroup = "production-machine",
-		order = "z-manual-assembler",
+		order = "a[manual-assembler-1]",
 		place_result = "manual-assembler",
 		stack_size = 50
 	},
