@@ -1,0 +1,9 @@
+{
+	"name": "manual-assembly",
+	"version": "0.0.1",
+	"title": "Manual Assembly",
+	"author": "ButteryGreg",
+	"factorio_version": "1.1",
+	"dependencies" : ["base >= 1.1"],
+	"description": "Assemblers must be programmed to create their products"
+}
