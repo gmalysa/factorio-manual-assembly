@@ -6,25 +6,25 @@
 
 local glog = require("scripts.glog")
 
-local drills = {}
+local this = {}
 
 ---
  -- @param drill LuaEntity representing in game drill to check
  -- @return bool true if we should process this drill
  --
-function drills.is_drill_ready(drill)
+function this.is_drill_ready(drill)
 	return drill.valid and drill.status == defines.entity_status.working
 end
 
-function drills.init()
+function this.init()
 	global.drills = {}
 end
 
-drills.on_built_match = {
+this.on_built_match = {
 	"burner-mining-drill"
 }
 
-function drills.on_built(e)
+function this.on_built(e)
 	local uid = e.unit_number
 
 	glog.log("new drill"..uid)
@@ -37,9 +37,9 @@ function drills.on_built(e)
 	}
 end
 
-function drills.on_tick()
+function this.on_tick()
 	for k, drill in pairs(global.drills) do
-		if drills.is_drill_ready(drill.drill) then
+		if this.is_drill_ready(drill.drill) then
 			local roll = math.random(-drill.drift, drill.drift)
 			local diff = 1 - (math.abs(drill.tracking - 1000) / 1000)
 			local progress = 0
@@ -58,4 +58,4 @@ function drills.on_tick()
 	end
 end
 
-return drills
+return this
