@@ -28,11 +28,11 @@ controllerprop.circuit_wire_max_distance = 9
 local desired = table.deepcopy(data.raw['constant-combinator']['constant-combinator'])
 
 desired.name = "assembler-needs"
-controllerprop.flags = {"placeable-player", "player-creation", "placeable-off-grid", "not-deconstructable", "not-blueprintable"}
-controllerprop.minable = nil
-controllerprop.collision_mask = {}
-controllerprop.selection_box = {{0, -0.75}, {0.5, 0.75}}
-controllerprop.circuit_wire_connection_points = {
+desired.flags = {"placeable-player", "player-creation", "placeable-off-grid", "not-deconstructable", "not-blueprintable"}
+desired.minable = nil
+desired.collision_mask = {}
+desired.selection_box = {{0, -0.75}, {0.5, 0.75}}
+desired.circuit_wire_connection_points = {
 	zerowire, zerowire, zerowire, zerowire
 }
 desired.circuit_wire_max_distance = 0
