@@ -8,12 +8,23 @@
 
 local this = {}
 
+this["__recipe-by-id"] = {}
 local id = 0
+
+---
+ -- Look up a recipe by id and either find it or the null recipe
+ -- @param[in] id recipe id number
+ -- @return control recipe definition
+ --
+function this.get_by_id(id)
+	return this["__recipe-by-id"][id] or this["null-recipe"]
+end
 
 local function build_recipe(recipe)
 	local mID = id
 	id = id + 1
 	recipe.id = mID
+	this["__recipe-by-id"][recipe.id] = recipe
 	return recipe
 end
 

@@ -103,3 +103,8 @@ end
 
 register_built_handler(on_built, to_event_filter(all_filters))
 script.on_event(defines.events.on_tick, on_tick_handler)
+
+local function on_load(event)
+end
+
+script.on_load(on_load)

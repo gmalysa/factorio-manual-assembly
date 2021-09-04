@@ -10,19 +10,18 @@ local controls = require("controls.assemblers")
 local this = {}
 
 function this.init()
-	global.controllers = {}
 	global.assemblers = {}
-end
-
-local function track_controller(c, e)
-	local uid = c.unit_number
-	global.controllers[uid] = c
-	global.assemblers[uid] = e
 end
 
 this.on_built_match = {
 	"manual-assembler"
 }
+
+function this.set_recipe(asm, recipe)
+	asm.state = {}
+	asm.recipe = recipe.id
+	recipe.init(asm.state)
+end
 
 function this.on_built(e)
 	local uid = e.unit_number
@@ -47,18 +46,14 @@ function this.on_built(e)
 
 	-- todo create sensor node for feedback in designs
 
-	local recipe = controls["null-recipe"]
-	local state = {}
-	recipe.init(state)
-
 	global.assemblers[uid] = {
 		assembler = e,
 		controller = c,
 		desired = d,
 		sensor = nil,
-		state = state,
-		recipe = recipe
 	}
+
+	this.set_recipe(global.assemblers[uid], controls["null-recipe"])
 end
 
 function this.on_tick()
@@ -73,16 +68,13 @@ function this.on_tick()
 			return
 		end
 
-		local control_recipe = asm.recipe
-
 		-- check if recipe changed and reinitialize controller if so
 		local next_control = controls[recipe.name]
-		if next_control.id ~= control_recipe.id then
-			asm.state = {}
-			next_control.init(asm.state)
-			asm.recipe = next_control
-			control_recipe = next_control
+		if next_control.id ~= asm.recipe then
+			this.set_recipe(asm, next_control)
 		end
+
+		local control_recipe = controls.get_by_id(asm.recipe)
 
 		-- check if every expected signal is satisfied
 		disable = false
