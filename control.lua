@@ -4,24 +4,61 @@
 -- @todo:
 -- assembler stuff needs to be reintegrated and made to actually work
 -- code formatting, comment blocks, etc
+-- need to handle: on_pre_player_mined_item, on_robot_pre_mined,
+--                 on_entity_died, script_raised_entity_destroy
 -- for performance at some point split things into active and inactive lists
 
 local glog = require("scripts.glog")
+--local assemblers = require("scripts.assemblers")
 local drills = require("scripts.drills")
 
 script.on_init(function()
-	global.controllers = {}
-	global.assemblers = {}
-	drills.init()
 	glog.init()
+--	assemblers.init()
+	drills.init()
 end)
 
-local function track_controller(c, e)
-	local uid = c.unit_number
-	global.controllers[uid] = c
-	global.assemblers[uid] = e
+---
+ -- Register a new set of matches to call the given function when entities are built
+ -- @param[inout] list Modify this list of filter definitions
+ -- @param[in] mod Module object that must have on_built_match containing a list of
+ --                entity names and on_built as a function to call when one is built
+ -- @return void
+ --
+local function register_built_filters(list, mod)
+	for k, v in pairs(mod.on_built_match) do
+		table.insert(list, {
+			name = v,
+			fn = mod.on_built
+		})
+	end
 end
 
+---
+ -- Convert our master filter list (which includes callbacks, for example) into a
+ -- filter that can be passed on_built to search for only the entities we care about
+ -- @param[in] filter Filter defined above, each entry has "name" at least which is an
+ --                   entity name
+ -- @return filter table suitable for script.on_event
+ --
+local function to_event_filter(filter)
+	local rtn = {}
+	for k, v in pairs(filter) do
+		table.insert(rtn, {filter = "name", name = v.name, mode = "or"})
+	end
+	return rtn
+end
+
+local all_filters = {}
+register_built_filters(all_filters, drills)
+
+---
+ -- Event handler for the on built class of events, which forwards to the appropriate
+ -- module to configure itself based on the entity name to callback relationships
+ -- established earlier
+ -- @param[in] event Event object/table with details
+ -- @return void
+ --
 local function on_built(event)
 	local e = event.created_entity or event.entity
 	local found = false
@@ -30,9 +67,9 @@ local function on_built(event)
 		return
 	end
 
-	for k,v in pairs(drills.on_built_match) do
-		if e.name == v then
-			drills.on_built(e)
+	for k,v in pairs(all_filters) do
+		if e.name == v.name then
+			v.fn(e)
 			found = true
 		end
 	end
@@ -42,59 +79,27 @@ local function on_built(event)
 	end
 end
 
-local function on_manual_assembler_built(event)
-	local e = event.created_entity or event.entity
-
-	if not e.valid then
-		return
-	end
-
-	-- create and attach controller
-	local c = e.surface.create_entity{
-		name = "assembler-controller",
-		position = {x = e.position.x + 1, y = e.position.y},
-		force = e.force,
-		create_build_effect_smoke = false
-	}
-	c.operable = false
-
-	track_controller(c, e)
-
-	-- todo another output combinator that shows what this assembler needs to progress?
-end
-
-local function register_build_handler(fn, filter)
+---
+ -- Handle all of the built events the same way
+ -- @param fn Function to call when the entity was built
+ -- @param filter Filter to use for event registration
+ -- @return void
+ --
+local function register_built_handler(fn, filter)
 	script.on_event(defines.events.on_built_entity, fn, filter)
 	script.on_event(defines.events.on_robot_built_entity, fn, filter)
 	script.on_event(defines.events.script_raised_built, fn, filter)
 	script.on_event(defines.events.script_raised_revive, fn, filter)
 end
 
--- need to handle on_pre_player_mined_item, on_robot_pre_mined, on_entity_died, script_raised_entity_destroy
-
-local filter = {}
-for k, v in pairs(drills.on_built_match) do
-	table.insert(filter, {filter = "name", name = v, mode = "or"})
-end
-
-register_build_handler(on_built, filter)
-
+---
+ -- Called once per tick to do updates
+ -- @param event Event representing the tick
+ -- @return void
+ --
 local function on_tick_handler(event)
-	for k,c in pairs(global.controllers) do
-		local assembler = global.assemblers[c.unit_number]
-		local signal = c.get_merged_signal({
-			type = "virtual",
-			name = "signal-blue"
-		})
-
-		if signal == 1 then
-			assembler.active = true
-		else
-			assembler.active = false
-		end
-	end
-
 	drills.on_tick()
 end
 
+register_built_handler(on_built, to_event_filter(all_filters))
 script.on_event(defines.events.on_tick, on_tick_handler)
