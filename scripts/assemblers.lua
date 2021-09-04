@@ -1,9 +1,6 @@
 -- SPDX-License-Identifier: BSD-3-Clause
 --
 
--- @todo
---  handle loading, the function pointers in the state need to be re-initialized
-
 local glog = require("scripts.glog")
 local controls = require("controls.assemblers")
 
