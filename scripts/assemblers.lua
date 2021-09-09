@@ -11,7 +11,8 @@ function this.init()
 end
 
 this.on_built_match = {
-	"manual-assembler"
+	"manual-assembler",
+	"feedback-assembler"
 }
 
 function this.set_recipe(asm, recipe)
@@ -22,31 +23,41 @@ end
 
 function this.on_built(e)
 	local uid = e.unit_number
+	local c = nil
+	local d = nil
 
 	-- create and attach controller
 	local c = e.surface.create_entity{
 		name = "assembler-controller",
-		position = {x = e.position.x + 1, y = e.position.y + 0.75},
+		position = {x = e.position.x + 1.25, y = e.position.y + 1.25},
 		force = e.force,
 		create_build_effect_smoke = false
 	}
 	c.operable = false
 
-	-- create reference for desired inputs
-	local d = e.surface.create_entity{
-		name = "assembler-needs",
-		position = {x = e.position.x + 1, y = e.position.y - 0.75},
-		force = e.force,
-		create_build_effect_smoke = false
-	}
-	d.operable = false
-
-	-- todo create sensor node for feedback in designs
+	if e.name == "manual-assembler" then
+		-- create reference for desired inputs
+		d = e.surface.create_entity{
+			name = "assembler-needs",
+			position = {x = e.position.x + 1.25, y = e.position.y - 1.25},
+			force = e.force,
+			create_build_effect_smoke = false
+		}
+		d.operable = false
+	elseif e.name == "feedback-assembler" then
+		-- create feedback sensor node instead
+		d = e.surface.create_entity{
+			name = "assembler-feedback",
+			position = {x = e.position.x + 1.25, y = e.position.y - 1.25},
+			force = e.force,
+			create_build_effect_smoke = false
+		}
+	end
 
 	global.assemblers[uid] = {
 		assembler = e,
 		controller = c,
-		desired = d,
+		feedback = d,
 		sensor = nil,
 	}
 
@@ -66,7 +77,7 @@ function this.on_tick()
 		end
 
 		-- check if recipe changed and reinitialize controller if so
-		local next_control = controls[recipe.name]
+		local next_control = controls.get_by_name(recipe.name)
 		if next_control.id ~= asm.recipe then
 			this.set_recipe(asm, next_control)
 		end
@@ -79,7 +90,7 @@ function this.on_tick()
 		for k,v in pairs(asm.state.signals) do
 			-- use direct lookup as in_signals doesn't have keys for signals
 			local signal = controller.get_merged_signal(v.signal)
-			if signal ~= v.value then
+			if signal ~= v.count then
 				disable = true
 			else
 				matched[v.signal.name] = true
@@ -88,7 +99,7 @@ function this.on_tick()
 
 		-- check we don't have extra signals to avoid some all inputs approach
 		if not disable then
-			local in_signals = controller.get_merged_signals()
+			local in_signals = controller.get_merged_signals() or {}
 			for k, v in pairs(in_signals) do
 				if matched[v.signal.name] == nil then
 					disable = true
@@ -105,19 +116,8 @@ function this.on_tick()
 		end
 
 		-- update desired input display
-		local desired = asm.desired
-		local ref = desired.get_or_create_control_behavior()
-		local params = {}
-		local idx = 1
-		for k,v in pairs(asm.state.signals) do
-			table.insert(params, {
-				signal = v.signal,
-				count = v.value,
-				index = idx
-			})
-			idx = idx + 1
-		end
-		ref.parameters = params
+		local ref = asm.feedback.get_or_create_control_behavior()
+		ref.parameters = control_recipe.desired(asm.state)
 	end
 end
 

@@ -19,7 +19,7 @@ controllerprop.name = "assembler-controller"
 controllerprop.flags = {"placeable-player", "player-creation", "placeable-off-grid", "not-deconstructable", "not-blueprintable"}
 controllerprop.minable = nil
 controllerprop.collision_mask = {}
-controllerprop.selection_box = {{0, -0.75}, {0.5, 0.75}}
+controllerprop.selection_box = {{-0.25, -0.25}, {0.25, 0.25}}
 controllerprop.circuit_wire_connection_points = {
 	zerowire, zerowire, zerowire, zerowire
 }
@@ -31,11 +31,22 @@ desired.name = "assembler-needs"
 desired.flags = {"placeable-player", "player-creation", "placeable-off-grid", "not-deconstructable", "not-blueprintable"}
 desired.minable = nil
 desired.collision_mask = {}
-desired.selection_box = {{0, -0.75}, {0.5, 0.75}}
+desired.selection_box = {{-0.25, -0.25}, {0.25, 0.25}}
 desired.circuit_wire_connection_points = {
 	zerowire, zerowire, zerowire, zerowire
 }
 desired.circuit_wire_max_distance = 0
+
+local feedback = table.deepcopy(data.raw['constant-combinator']['constant-combinator'])
+feedback.name = "assembler-feedback"
+feedback.flags = {"placeable-player", "player-creation", "placeable-off-grid", "not-deconstructable", "not-blueprintable"}
+feedback.minable = nil
+feedback.collision_mask = {}
+feedback.selection_box = {{-0.25, -0.25}, {0.25, 0.25}}
+feedback.circuit_wire_connection_points = {
+	zerowire, zerowire, zerowire, zerowire
+}
+feedback.circuit_wire_max_distance = 0
 
 local assembler = table.deepcopy(data.raw['assembling-machine']['assembling-machine-1'])
 assembler.name = "manual-assembler"
@@ -78,6 +89,22 @@ data:extend({
 		},
 		energy_required = 1,
 		result = "manual-assembler"
+	},
+
+	{
+		type = "item-subgroup",
+		name = "virtual-signal-control",
+		group = "signals",
+		order = "f",
+	},
+
+	{
+		type = "virtual-signal",
+		name = "clk",
+		icon = "__base__/graphics/icons/signal/signal_C.png",
+		icon_size = 64, icon_mipmaps = 4,
+		subgroup = "virtual-signal-control",
+		order = "a[clock]"
 	}
 })
 
